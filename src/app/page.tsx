@@ -9,6 +9,8 @@ import ReferenceTable from "@/components/ReferenceTable";
 import StockCharts from "@/components/StockCharts";
 import SearchFilters from "@/components/SearchFilters";
 import ExportButtons from "@/components/ExportButtons";
+import StockAdjustModal from "@/components/StockAdjustModal";
+import Calculator from "@/components/Calculator";
 
 export default function Dashboard() {
   const [references, setReferences] = useState<ReferenceWithDetails[]>([]);
@@ -22,6 +24,9 @@ export default function Dashboard() {
   const [editingRef, setEditingRef] = useState<ReferenceWithDetails | null>(null);
   const [filters, setFilters] = useState({ search: "", code: "", nom: "", dimension: "", dateFrom: "", dateTo: "", type: "" });
   const [loading, setLoading] = useState(true);
+  const [stockAdjustRef, setStockAdjustRef] = useState<ReferenceWithDetails | null>(null);
+  const [stockAdjustAction, setStockAdjustAction] = useState<"add" | "subtract">("add");
+  const [showCalc, setShowCalc] = useState(false);
 
   const fetchData = useCallback(async () => {
     const params = new URLSearchParams();
@@ -78,6 +83,16 @@ export default function Dashboard() {
     fetchData();
   };
 
+  const handleStockAdjust = (ref: ReferenceWithDetails, action: "add" | "subtract") => {
+    setStockAdjustRef(ref);
+    setStockAdjustAction(action);
+  };
+
+  const handleStockAdjustClose = () => {
+    setStockAdjustRef(null);
+    fetchData();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Header */}
@@ -93,9 +108,26 @@ export default function Dashboard() {
               </h1>
               <p className="text-xs text-slate-400">Gestion d&apos;Inventaire</p>
             </div>
+            <div className="ml-4 flex items-center gap-2 pl-4 border-l border-slate-700/50">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-slate-300">Said</span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <ExportButtons />
+            <button
+              onClick={() => setShowCalc(!showCalc)}
+              className="btn-secondary flex items-center gap-2 text-sm"
+              title="Calculatrice"
+            >
+              <svg className="w-4 h-4 text-ceramore-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </button>
             <button
               onClick={() => { setEditingRef(null); setShowProductForm(true); }}
               className="btn-secondary flex items-center gap-2"
@@ -133,6 +165,7 @@ export default function Dashboard() {
           references={references}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onStockAdjust={handleStockAdjust}
           loading={loading}
         />
       </main>
@@ -150,6 +183,18 @@ export default function Dashboard() {
         <ProductForm
           editingRef={editingRef}
           onClose={handleFormClose}
+        />
+      )}
+
+      {/* Stock Adjust Modal */}
+      {showCalc && <Calculator onClose={() => setShowCalc(false)} />}
+
+      {stockAdjustRef && (
+        <StockAdjustModal
+          reference={stockAdjustRef}
+          action={stockAdjustAction}
+          onClose={() => setStockAdjustRef(null)}
+          onConfirm={handleStockAdjustClose}
         />
       )}
     </div>

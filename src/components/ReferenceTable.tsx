@@ -6,10 +6,11 @@ interface Props {
   references: ReferenceWithDetails[];
   onEdit: (ref: ReferenceWithDetails) => void;
   onDelete: (id: number) => void;
+  onStockAdjust: (ref: ReferenceWithDetails, action: "add" | "subtract") => void;
   loading: boolean;
 }
 
-export default function ReferenceTable({ references, onEdit, onDelete, loading }: Props) {
+export default function ReferenceTable({ references, onEdit, onDelete, onStockAdjust, loading }: Props) {
   if (loading) {
     return (
       <div className="glass-card p-8">
@@ -96,6 +97,24 @@ export default function ReferenceTable({ references, onEdit, onDelete, loading }
                 <td className="px-6 py-4 text-slate-400 text-sm">{new Date(ref.created_at).toLocaleDateString("fr-FR")}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => onStockAdjust(ref, "add")}
+                      className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                      title="Ajouter au stock"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => onStockAdjust(ref, "subtract")}
+                      className="p-2 text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors"
+                      title="Retirer du stock"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
+                    </button>
                     <button
                       onClick={() => onEdit(ref)}
                       className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"

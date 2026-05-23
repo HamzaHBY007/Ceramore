@@ -63,8 +63,9 @@ export async function GET(request: NextRequest) {
     is_product: ref.type === "produit",
   }));
 
+  const uniqueCodes = new Set(result.map((r) => r.code));
   const stats = {
-    total_references: result.length,
+    total_references: uniqueCodes.size,
     total_quantite: result.reduce((s, r) => s + r.quantite, 0),
     total_m2: Math.round(result.reduce((s, r) => s + r.total_m2, 0) * 100) / 100,
     total_valeur: Math.round(result.reduce((s, r) => s + r.valeur_stock, 0) * 100) / 100,
