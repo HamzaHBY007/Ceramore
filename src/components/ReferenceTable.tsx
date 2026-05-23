@@ -1,16 +1,16 @@
 "use client";
 
-import type { ReferenceWithCalibres } from "@/lib/types";
+import type { ReferenceWithDetails } from "@/lib/types";
 
 interface Props {
-  references: ReferenceWithCalibres[];
-  onEdit: (ref: ReferenceWithCalibres) => void;
+  references: ReferenceWithDetails[];
+  onEdit: (ref: ReferenceWithDetails) => void;
   onDelete: (id: number) => void;
-  onStock: (ref: ReferenceWithCalibres, type: "entree" | "sortie") => void;
+  onStockAdjust: (ref: ReferenceWithDetails, action: "add" | "subtract") => void;
   loading: boolean;
 }
 
-export default function ReferenceTable({ references, onEdit, onDelete, onStock, loading }: Props) {
+export default function ReferenceTable({ references, onEdit, onDelete, onStockAdjust, loading }: Props) {
   if (loading) {
     return (
       <div className="glass-card p-8">
@@ -33,7 +33,7 @@ export default function ReferenceTable({ references, onEdit, onDelete, onStock, 
           </svg>
         </div>
         <h3 className="text-lg font-medium text-slate-300 mb-2">Aucune référence trouvée</h3>
-        <p className="text-slate-500">Ajoutez votre première référence de carrelage pour commencer.</p>
+        <p className="text-slate-500">Ajoutez votre première référence pour commencer.</p>
       </div>
     );
   }
@@ -53,12 +53,13 @@ export default function ReferenceTable({ references, onEdit, onDelete, onStock, 
           <thead>
             <tr className="bg-slate-800/50">
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Référence</th>
+              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Type</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Dimensions</th>
-              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Pcs/Boîte</th>
-              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">m²/Boîte</th>
-              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Prix/m²</th>
-              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Calibres</th>
-              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Total Boîtes</th>
+              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Pcs/Caisse</th>
+              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">m²/Caisse</th>
+              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Prix Unit.</th>
+              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Caises</th>
+              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Quantité</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Total m²</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Valeur</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Date</th>
@@ -67,55 +68,52 @@ export default function ReferenceTable({ references, onEdit, onDelete, onStock, 
           </thead>
           <tbody className="divide-y divide-slate-700/30">
             {references.map((ref) => (
-              <tr key={ref.id} className={`hover:bg-slate-800/30 transition-colors ${ref.is_low_stock ? "bg-red-500/5" : ""}`}>
+              <tr key={ref.id} className="hover:bg-slate-800/30 transition-colors">
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    {ref.is_low_stock && (
-                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" title="Stock bas" />
-                    )}
-                    <div>
-                      <p className="font-semibold text-white">{ref.code}</p>
-                      <p className="text-sm text-slate-400">{ref.nom}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-slate-300">{ref.largeur_cm}×{ref.longueur_cm} cm</td>
-                <td className="px-6 py-4 text-slate-300">{ref.pieces_par_boite}</td>
-                <td className="px-6 py-4 text-slate-300">{ref.m2_par_boite.toFixed(4)}</td>
-                <td className="px-6 py-4 text-slate-300">{ref.prix_unitaire_m2.toFixed(2)} DH</td>
-                <td className="px-6 py-4">
-                  <div className="space-y-1">
-                    {ref.calibres.map((cal) => (
-                      <div key={cal.id} className="flex items-center gap-2 text-sm">
-                        <span className="px-2 py-0.5 bg-slate-700/50 rounded-md text-slate-300 text-xs font-medium">{cal.nom}</span>
-                        <span className="text-slate-400">{cal.quantite_boites} boîtes</span>
-                      </div>
-                    ))}
+                  <div>
+                    <p className="font-semibold text-white">{ref.code}</p>
+                    {ref.nom && <p className="text-sm text-slate-400">{ref.nom}</p>}
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`font-semibold ${ref.is_low_stock ? "text-red-400" : "text-white"}`}>
-                    {ref.total_boites}
+                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${ref.type === "produit" ? "bg-blue-500/20 text-blue-300" : "bg-emerald-500/20 text-emerald-300"}`}>
+                    {ref.type === "produit" ? "Produit" : "Carrelage"}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-slate-300">{ref.total_m2.toFixed(2)}</td>
+                <td className="px-6 py-4 text-slate-300">
+                  {ref.type === "produit" ? "—" : `${ref.largeur_cm}×${ref.longueur_cm} cm`}
+                </td>
+                <td className="px-6 py-4 text-slate-300">{ref.pieces_par_boite || "—"}</td>
+                <td className="px-6 py-4 text-slate-300">
+                  {ref.type === "produit" ? "—" : ref.m2_par_boite.toFixed(4)}
+                </td>
+                <td className="px-6 py-4 text-slate-300">
+                  {ref.prix_unitaire.toFixed(2)} DH{ref.type === "produit" ? "" : "/m²"}
+                </td>
+                <td className="px-6 py-4 text-slate-300">
+                  {ref.type === "produit" ? "—" : (ref.pieces_par_boite > 0 ? (ref.quantite / ref.pieces_par_boite).toFixed(1) : "—")}
+                </td>
+                <td className="px-6 py-4 text-white font-semibold">{ref.quantite}</td>
+                <td className="px-6 py-4 text-slate-300">
+                  {ref.type === "produit" ? "—" : ref.total_m2.toFixed(2)}
+                </td>
                 <td className="px-6 py-4 text-ceramore-gold font-semibold">{ref.valeur_stock.toFixed(2)} DH</td>
                 <td className="px-6 py-4 text-slate-400 text-sm">{new Date(ref.created_at).toLocaleDateString("fr-FR")}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-1">
                     <button
-                      onClick={() => onStock(ref, "entree")}
+                      onClick={() => onStockAdjust(ref, "add")}
                       className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                      title="Entrée de stock"
+                      title="Ajouter au stock"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
                     <button
-                      onClick={() => onStock(ref, "sortie")}
+                      onClick={() => onStockAdjust(ref, "subtract")}
                       className="p-2 text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors"
-                      title="Sortie de stock"
+                      title="Retirer du stock"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />

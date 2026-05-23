@@ -1,55 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
+import type { Reference } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   const db = getDb();
   const body = await request.json();
-  const { reference_id, calibre_id, type, quantite_boites, note } = body;
+  const { reference_id, type, quantite, note } = body;
 
-  if (!reference_id || !type || !quantite_boites || quantite_boites <= 0) {
+  if (!reference_id || !type || !quantite || quantite <= 0) {
     return NextResponse.json({ error: "Paramètres invalides" }, { status: 400 });
   }
 
   const transaction = db.transaction(() => {
     db.prepare(`
-      INSERT INTO stock_history (reference_id, calibre_id, type, quantite_boites, note)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(reference_id, calibre_id || null, type, quantite_boites, note || null);
+      INSERT INTO stock_history (reference_id, type, quantite, note)
+      VALUES (?, ?, ?, ?)
+    `).run(reference_id, type, quantite, note || null);
 
-    if (calibre_id) {
-      if (type === "entree") {
-        db.prepare(`UPDATE calibres SET quantite_boites = quantite_boites + ? WHERE id = ?`).run(quantite_boites, calibre_id);
-      } else {
-        db.prepare(`UPDATE calibres SET quantite_boites = MAX(0, quantite_boites - ?) WHERE id = ?`).run(quantite_boites, calibre_id);
-      }
+    const ref = db.prepare(`SELECT * FROM references_table WHERE id = ?`).get(reference_id) as Reference;
+
+    let newQuantite: number;
+    if (type === "entree") {
+      newQuantite = ref.quantite + quantite;
+    } else {
+      newQuantite = Math.max(0, ref.quantite - quantite);
     }
 
-    db.prepare(`UPDATE references_table SET updated_at = datetime('now') WHERE id = ?`).run(reference_id);
+    const isProduct = ref.type === "produit";
+    const ppb = ref.pieces_par_boite || 1;
+    const m2_per_piece = ppb > 0 ? ref.m2_par_boite / ppb : 0;
+    const total_m2 = isProduct ? 0 : newQuantite * m2_per_piece;
+    const valeur_stock = isProduct ? newQuantite * ref.prix_unitaire : total_m2 * ref.prix_unitaire;
+
+    db.prepare(`UPDATE references_table SET quantite=?, total_m2=?, valeur_stock=?, updated_at=datetime('now') WHERE id=?`).run(
+      newQuantite,
+      Math.round(total_m2 * 100) / 100,
+      Math.round(valeur_stock * 100) / 100,
+      reference_id
+    );
 
     const today = new Date().toISOString().split("T")[0];
     const totals = db.prepare(`
       SELECT 
-        COALESCE(SUM(c.quantite_boites), 0) as total_boites,
-        COALESCE(SUM(c.quantite_boites * r.m2_par_boite), 0) as total_m2,
-        COALESCE(SUM(c.quantite_boites * r.m2_par_boite * r.prix_unitaire_m2), 0) as total_valeur
-      FROM calibres c
-      JOIN references_table r ON c.reference_id = r.id
-    `).get() as { total_boites: number; total_m2: number; total_valeur: number };
+        COALESCE(SUM(quantite), 0) as total_quantite,
+        COALESCE(SUM(total_m2), 0) as total_m2,
+        COALESCE(SUM(valeur_stock), 0) as total_valeur
+      FROM references_table
+    `).get() as { total_quantite: number; total_m2: number; total_valeur: number };
 
     const existing = db.prepare(`SELECT id FROM stock_snapshots WHERE date = ?`).get(today);
     if (existing) {
-      db.prepare(`UPDATE stock_snapshots SET total_m2=?, total_valeur=?, total_boites=? WHERE date=?`).run(
+      db.prepare(`UPDATE stock_snapshots SET total_m2=?, total_valeur=?, total_quantite=? WHERE date=?`).run(
         Math.round(totals.total_m2 * 100) / 100,
         Math.round(totals.total_valeur * 100) / 100,
-        totals.total_boites,
+        totals.total_quantite,
         today
       );
     } else {
-      db.prepare(`INSERT INTO stock_snapshots (date, total_m2, total_valeur, total_boites) VALUES (?, ?, ?, ?)`).run(
+      db.prepare(`INSERT INTO stock_snapshots (date, total_m2, total_valeur, total_quantite) VALUES (?, ?, ?, ?)`).run(
         today,
         Math.round(totals.total_m2 * 100) / 100,
         Math.round(totals.total_valeur * 100) / 100,
-        totals.total_boites
+        totals.total_quantite
       );
     }
   });

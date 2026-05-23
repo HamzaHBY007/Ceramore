@@ -65,8 +65,8 @@ export default function StockCharts({ snapshots }: Props) {
         borderRadius: 6,
       },
       {
-        label: "Total Boîtes",
-        data: snapshots.map((s) => s.total_boites),
+        label: "Quantité Totale",
+        data: snapshots.map((s) => s.total_quantite),
         backgroundColor: "rgba(34, 197, 94, 0.6)",
         borderColor: "rgba(34, 197, 94, 1)",
         borderWidth: 1,

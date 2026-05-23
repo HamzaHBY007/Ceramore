@@ -6,38 +6,28 @@ export interface Reference {
   longueur_cm: number;
   pieces_par_boite: number;
   m2_par_boite: number;
-  prix_unitaire_m2: number;
-  seuil_alerte: number;
+  prix_unitaire: number;
+  quantite: number;
+  total_m2: number;
+  valeur_stock: number;
+  type: "carrelage" | "produit";
   created_at: string;
   updated_at: string;
 }
 
-export interface Calibre {
-  id: number;
-  reference_id: number;
-  nom: string;
-  quantite_boites: number;
-}
-
-export interface ReferenceWithCalibres extends Reference {
-  calibres: Calibre[];
-  total_boites: number;
-  total_m2: number;
-  valeur_stock: number;
-  is_low_stock: boolean;
+export interface ReferenceWithDetails extends Reference {
+  is_product: boolean;
 }
 
 export interface StockHistory {
   id: number;
   reference_id: number;
-  calibre_id: number | null;
   type: "entree" | "sortie";
-  quantite_boites: number;
+  quantite: number;
   date_entry: string;
   note: string | null;
   reference_code?: string;
   reference_nom?: string;
-  calibre_nom?: string;
 }
 
 export interface StockSnapshot {
@@ -45,13 +35,18 @@ export interface StockSnapshot {
   date: string;
   total_m2: number;
   total_valeur: number;
-  total_boites: number;
+  total_quantite: number;
 }
 
 export interface DashboardStats {
   total_references: number;
-  total_boites: number;
+  total_quantite: number;
   total_m2: number;
   total_valeur: number;
-  low_stock_count: number;
+}
+
+export interface FilterOptions {
+  codes: string[];
+  noms: string[];
+  dimensions: string[];
 }

@@ -1,16 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { ReferenceWithCalibres } from "@/lib/types";
+import type { ReferenceWithDetails } from "@/lib/types";
 
 interface Props {
-  editingRef: ReferenceWithCalibres | null;
+  editingRef: ReferenceWithDetails | null;
   onClose: () => void;
-}
-
-interface CalibreInput {
-  nom: string;
-  quantite_boites: number;
 }
 
 export default function ReferenceForm({ editingRef, onClose }: Props) {
@@ -19,13 +14,11 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
   const [largeur, setLargeur] = useState(editingRef?.largeur_cm?.toString() || "");
   const [longueur, setLongueur] = useState(editingRef?.longueur_cm?.toString() || "");
   const [pieces, setPieces] = useState(editingRef?.pieces_par_boite?.toString() || "");
-  const [prix, setPrix] = useState(editingRef?.prix_unitaire_m2?.toString() || "");
-  const [seuil, setSeuil] = useState(editingRef?.seuil_alerte?.toString() || "5");
-  const [calibres, setCalibres] = useState<CalibreInput[]>(
-    editingRef?.calibres?.map((c) => ({ nom: c.nom, quantite_boites: c.quantite_boites })) || [
-      { nom: "Standard", quantite_boites: 0 },
-    ]
-  );
+  const [prix, setPrix] = useState(editingRef?.prix_unitaire?.toString() || "");
+  const editBoxes = editingRef && editingRef.pieces_par_boite > 0
+    ? (editingRef.quantite / editingRef.pieces_par_boite).toString()
+    : editingRef?.quantite?.toString() || "";
+  const [quantite, setQuantite] = useState(editBoxes);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -34,42 +27,32 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       ? (parseFloat(largeur) / 100) * (parseFloat(longueur) / 100) * parseInt(pieces)
       : 0;
 
-  const totalBoxes = calibres.reduce((s, c) => s + (c.quantite_boites || 0), 0);
-  const totalM2 = totalBoxes * m2PerBox;
+  const totalBoxes = parseFloat(quantite) || 0;
+  const ppb = parseInt(pieces) || 1;
+  const totalPieces = Math.round(totalBoxes * ppb);
+  const m2PerPiece = ppb > 0 ? m2PerBox / ppb : 0;
+  const totalM2 = totalPieces * m2PerPiece;
   const totalValue = totalM2 * (parseFloat(prix) || 0);
-
-  const addCalibre = () => {
-    setCalibres([...calibres, { nom: "", quantite_boites: 0 }]);
-  };
-
-  const removeCalibre = (index: number) => {
-    if (calibres.length <= 1) return;
-    setCalibres(calibres.filter((_, i) => i !== index));
-  };
-
-  const updateCalibre = (index: number, field: keyof CalibreInput, value: string | number) => {
-    const updated = [...calibres];
-    if (field === "quantite_boites") {
-      updated[index] = { ...updated[index], quantite_boites: typeof value === "string" ? parseInt(value) || 0 : value };
-    } else {
-      updated[index] = { ...updated[index], nom: String(value) };
-    }
-    setCalibres(updated);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSaving(true);
 
-    if (!code || !nom || !largeur || !longueur || !pieces) {
+    if (!code || !largeur || !longueur || !pieces) {
       setError("Veuillez remplir tous les champs obligatoires.");
       setSaving(false);
       return;
     }
 
-    if (calibres.some((c) => !c.nom.trim())) {
-      setError("Chaque calibre doit avoir un nom.");
+    if (!prix || parseFloat(prix) <= 0) {
+      setError("Le prix unitaire est obligatoire.");
+      setSaving(false);
+      return;
+    }
+
+    if (!quantite || parseFloat(quantite) < 0) {
+      setError("Le nombre de caises est obligatoire.");
       setSaving(false);
       return;
     }
@@ -81,9 +64,9 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       largeur_cm: parseFloat(largeur),
       longueur_cm: parseFloat(longueur),
       pieces_par_boite: parseInt(pieces),
-      prix_unitaire_m2: parseFloat(prix) || 0,
-      seuil_alerte: parseInt(seuil) || 5,
-      calibres,
+      prix_unitaire: parseFloat(prix),
+      quantite: totalPieces,
+      type: "carrelage",
     };
 
     const res = await fetch("/api/references", {
@@ -129,8 +112,8 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
               <input className="input-field" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex: CRM-001" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Nom du Produit *</label>
-              <input className="input-field" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: Marbre Blanc 60x60" />
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Calibre</label>
+              <input className="input-field" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: A, B, C (optionnel)" />
             </div>
           </div>
 
@@ -144,77 +127,48 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
               <input className="input-field" type="number" step="0.1" value={longueur} onChange={(e) => setLongueur(e.target.value)} placeholder="60" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Pièces/Boîte *</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Pièces/Caisse *</label>
               <input className="input-field" type="number" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="4" />
             </div>
           </div>
 
-          {/* Auto-calculated m² per box */}
           {m2PerBox > 0 && (
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <p className="text-emerald-400 text-sm font-medium">
-                📐 m² par boîte : <span className="text-lg font-bold">{m2PerBox.toFixed(4)}</span> m²
+                m² par caisse : <span className="text-lg font-bold">{m2PerBox.toFixed(4)}</span> m²
               </p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Prix unitaire (DH/m²)</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Prix unitaire (DH/m²) *</label>
               <input className="input-field" type="number" step="0.01" value={prix} onChange={(e) => setPrix(e.target.value)} placeholder="120.00" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Seuil d&apos;alerte (boîtes)</label>
-              <input className="input-field" type="number" value={seuil} onChange={(e) => setSeuil(e.target.value)} placeholder="5" />
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Nombre de Caises *</label>
+              <input className="input-field" type="number" min="0" step="0.1" value={quantite} onChange={(e) => setQuantite(e.target.value)} placeholder="10" />
             </div>
           </div>
 
-          {/* Calibres */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-300">Calibres (Grades de qualité)</label>
-              <button type="button" onClick={addCalibre} className="text-sm text-ceramore-gold hover:text-amber-400 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Ajouter un calibre
-              </button>
+          {editingRef && editingRef.pieces_par_boite > 0 && (
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <p className="text-blue-300 text-sm">
+                Stock actuel : <span className="font-bold">{editingRef.quantite}</span> pièces
+                (<span className="font-bold">{(editingRef.quantite / editingRef.pieces_par_boite).toFixed(1)}</span> caises)
+                {" | "}{editingRef.total_m2.toFixed(2)} m²
+                {" | "}{editingRef.valeur_stock.toFixed(2)} DH
+              </p>
             </div>
-            <div className="space-y-2">
-              {calibres.map((cal, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl">
-                  <input
-                    className="input-field flex-1"
-                    value={cal.nom}
-                    onChange={(e) => updateCalibre(index, "nom", e.target.value)}
-                    placeholder="Nom du calibre (ex: A, B, C)"
-                  />
-                  <input
-                    className="input-field w-32"
-                    type="number"
-                    value={cal.quantite_boites || ""}
-                    onChange={(e) => updateCalibre(index, "quantite_boites", e.target.value)}
-                    placeholder="Boîtes"
-                  />
-                  {calibres.length > 1 && (
-                    <button type="button" onClick={() => removeCalibre(index)} className="text-red-400 hover:text-red-300 p-1">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
 
-          {/* Live summary */}
-          {totalBoxes > 0 && m2PerBox > 0 && (
+          {totalBoxes > 0 && m2PerBox > 0 && parseFloat(prix) > 0 && (
             <div className="p-4 bg-ceramore-gold/10 border border-ceramore-gold/20 rounded-xl space-y-1">
               <p className="text-amber-300 text-sm">
-                📦 Total boîtes : <span className="font-bold">{totalBoxes}</span> | 
-                📐 Total m² : <span className="font-bold">{totalM2.toFixed(2)}</span> | 
-                💰 Valeur : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
+                Caises : <span className="font-bold">{totalBoxes % 1 === 0 ? totalBoxes : totalBoxes.toFixed(1)}</span> | 
+                Pièces : <span className="font-bold">{totalPieces}</span> | 
+                Total m² : <span className="font-bold">{totalM2.toFixed(2)}</span> | 
+                Valeur : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
               </p>
             </div>
           )}

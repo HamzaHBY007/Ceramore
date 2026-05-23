@@ -26,19 +26,18 @@ export default function ExportButtons() {
 
       autoTable(doc, {
         startY: 38,
-        head: [["Code", "Nom", "Dimensions", "Pcs/Boîte", "m²/Boîte", "Prix/m²", "Calibres", "Total Boîtes", "Total m²", "Valeur (DH)", "Alerte"]],
+        head: [["Code", "Nom", "Type", "Dimensions", "Pcs/Caisse", "m²/Caisse", "Prix Unitaire", "Quantité", "Total m²", "Valeur (DH)"]],
         body: data.map((r: Record<string, unknown>) => [
           r.code,
           r.nom,
+          r.type,
           r.dimensions,
-          r.pieces_par_boite,
-          r.m2_par_boite,
-          r.prix_m2,
-          r.calibres,
-          r.total_boites,
+          r.pieces_par_caisse,
+          r.m2_par_caisse,
+          r.prix_unitaire,
+          r.quantite,
           r.total_m2,
           r.valeur_stock,
-          r.alerte,
         ]),
         styles: { fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [212, 165, 116], textColor: [255, 255, 255] },
@@ -69,14 +68,13 @@ export default function ExportButtons() {
       const XLSX = await import("xlsx");
 
       const headers = [
-        "Code", "Nom", "Dimensions", "Pcs/Boîte", "m²/Boîte", "Prix/m² (DH)",
-        "Calibres", "Total Boîtes", "Total m²", "Valeur Stock (DH)", "Seuil Alerte", "Alerte", "Date Création"
+        "Code", "Nom", "Type", "Dimensions", "Pcs/Caisse", "m²/Caisse", "Prix Unitaire (DH)",
+        "Quantité", "Total m²", "Valeur Stock (DH)", "Date Création"
       ];
 
       const rows = data.map((r: Record<string, unknown>) => [
-        r.code, r.nom, r.dimensions, r.pieces_par_boite, r.m2_par_boite,
-        r.prix_m2, r.calibres, r.total_boites, r.total_m2, r.valeur_stock,
-        r.seuil_alerte, r.alerte, r.date_creation,
+        r.code, r.nom, r.type, r.dimensions, r.pieces_par_caisse, r.m2_par_caisse,
+        r.prix_unitaire, r.quantite, r.total_m2, r.valeur_stock, r.date_creation,
       ]);
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
