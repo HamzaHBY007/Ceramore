@@ -1,0 +1,35 @@
+{
+  "name": "ceramore-inventory",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "chart.js": "^4.4.7",
+    "date-fns": "^4.1.0",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^19.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.0"
+  }
+}
