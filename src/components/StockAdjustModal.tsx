@@ -21,13 +21,28 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
 
   const parsedAmount = parseInt(amount) || 0;
 
-  const computedQuantite = (() => {
+  const computedCaises = (() => {
     if (mode === "caises") return parsedAmount;
     if (isTile && reference.pieces_par_boite > 0) {
       return Math.ceil(parsedAmount / reference.pieces_par_boite);
     }
     return parsedAmount;
   })();
+
+  const newQuantite = (() => {
+    if (action === "add") return reference.quantite + computedCaises;
+    return Math.max(0, reference.quantite - computedCaises);
+  })();
+
+  const previewTotalM2 = isTile ? newQuantite * reference.m2_par_boite : 0;
+  const previewTotalPrice = isProduct
+    ? newQuantite * reference.prix_unitaire
+    : previewTotalM2 * reference.prix_unitaire;
+
+  const deltaM2 = isTile ? computedCaises * reference.m2_par_boite : 0;
+  const deltaPrice = isProduct
+    ? computedCaises * reference.prix_unitaire
+    : deltaM2 * reference.prix_unitaire;
 
   const handleSubmit = async () => {
     if (parsedAmount <= 0) {
@@ -43,7 +58,7 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
       body: JSON.stringify({
         reference_id: reference.id,
         type: action === "add" ? "entree" : "sortie",
-        quantite: isProduct ? parsedAmount : computedQuantite,
+        quantite: isProduct ? parsedAmount : computedCaises,
         note: `${action === "add" ? "Ajout" : "Retrait"} de ${parsedAmount} ${mode === "caises" ? "caises" : "unités"}`,
       }),
     });
@@ -59,7 +74,6 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
   };
 
   const actionLabel = action === "add" ? "Ajouter" : "Retirer";
-  const actionColor = action === "add" ? "emerald" : "red";
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -120,15 +134,58 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
 
         {isTile && mode === "unites" && parsedAmount > 0 && reference.pieces_par_boite > 0 && (
           <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-sm">
-            {parsedAmount} unités = {computedQuantite} caisse{computedQuantite > 1 ? "s" : ""} ({reference.pieces_par_boite} pcs/caisse)
+            {parsedAmount} unités = {computedCaises} caisse{computedCaises > 1 ? "s" : ""} ({reference.pieces_par_boite} pcs/caisse)
           </div>
         )}
 
         {parsedAmount > 0 && (
-          <div className={`mb-4 p-3 bg-${actionColor}-500/10 border border-${actionColor}-500/20 rounded-xl text-sm`}>
-            <p className={`text-${actionColor}-300`}>
-              {actionLabel} <span className="font-bold">{isProduct ? parsedAmount : computedQuantite}</span> {isProduct ? "unité(s)" : "caisse(s)"} {action === "add" ? "au" : "du"} stock
-            </p>
+          <div className="mb-4 space-y-2">
+            <div className={`p-3 rounded-xl text-sm ${action === "add" ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-red-500/10 border border-red-500/20"}`}>
+              <p className={action === "add" ? "text-emerald-300" : "text-red-300"}>
+                {actionLabel} <span className="font-bold">{isProduct ? parsedAmount : computedCaises}</span> {isProduct ? "unité(s)" : "caisse(s)"} {action === "add" ? "au" : "du"} stock
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-700/30 border border-slate-600/20 rounded-xl text-sm space-y-1">
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Après confirmation :</p>
+              {isTile && (
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Total m²</span>
+                  <span className="text-white font-medium">
+                    {previewTotalM2.toFixed(2)} m²
+                    <span className={`ml-1 text-xs ${action === "add" ? "text-emerald-400" : "text-red-400"}`}>
+                      ({action === "add" ? "+" : "-"}{deltaM2.toFixed(2)})
+                    </span>
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-400">Valeur totale</span>
+                <span className="text-ceramore-gold font-medium">
+                  {previewTotalPrice.toFixed(2)} DH
+                  <span className={`ml-1 text-xs ${action === "add" ? "text-emerald-400" : "text-red-400"}`}>
+                    ({action === "add" ? "+" : "-"}{deltaPrice.toFixed(2)})
+                  </span>
+                </span>
+              </div>
+              {!isProduct && (
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Caises</span>
+                  <span className="text-white font-medium">
+                    {newQuantite}
+                    <span className={`ml-1 text-xs ${action === "add" ? "text-emerald-400" : "text-red-400"}`}>
+                      ({action === "add" ? "+" : "-"}{computedCaises})
+                    </span>
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-400">Quantité (pcs)</span>
+                <span className="text-white font-medium">
+                  {isProduct ? newQuantite : newQuantite * (reference.pieces_par_boite || 1)}
+                </span>
+              </div>
+            </div>
           </div>
         )}
 

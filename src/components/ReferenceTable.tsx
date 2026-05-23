@@ -58,6 +58,7 @@ export default function ReferenceTable({ references, onEdit, onDelete, onStockAd
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Pcs/Caisse</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">m²/Caisse</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Prix Unit.</th>
+              <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Caises</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Quantité</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Total m²</th>
               <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-3">Valeur</th>
@@ -89,7 +90,12 @@ export default function ReferenceTable({ references, onEdit, onDelete, onStockAd
                 <td className="px-6 py-4 text-slate-300">
                   {ref.prix_unitaire.toFixed(2)} DH{ref.type === "produit" ? "" : "/m²"}
                 </td>
-                <td className="px-6 py-4 text-white font-semibold">{ref.quantite}</td>
+                <td className="px-6 py-4 text-slate-300">
+                  {ref.type === "produit" ? "—" : ref.quantite}
+                </td>
+                <td className="px-6 py-4 text-white font-semibold">
+                  {ref.type === "produit" ? ref.quantite : ref.quantite * (ref.pieces_par_boite || 1)}
+                </td>
                 <td className="px-6 py-4 text-slate-300">
                   {ref.type === "produit" ? "—" : ref.total_m2.toFixed(2)}
                 </td>
