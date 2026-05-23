@@ -16,7 +16,7 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
   const [pieces, setPieces] = useState(editingRef?.pieces_par_boite?.toString() || "");
   const [prix, setPrix] = useState(editingRef?.prix_unitaire?.toString() || "");
   const editBoxes = editingRef && editingRef.pieces_par_boite > 0
-    ? Math.floor(editingRef.quantite / editingRef.pieces_par_boite).toString()
+    ? (editingRef.quantite / editingRef.pieces_par_boite).toString()
     : editingRef?.quantite?.toString() || "";
   const [quantite, setQuantite] = useState(editBoxes);
   const [error, setError] = useState("");
@@ -27,9 +27,10 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       ? (parseFloat(largeur) / 100) * (parseFloat(longueur) / 100) * parseInt(pieces)
       : 0;
 
-  const totalBoxes = parseInt(quantite) || 0;
-  const totalPieces = totalBoxes * (parseInt(pieces) || 1);
-  const m2PerPiece = parseInt(pieces) > 0 ? m2PerBox / parseInt(pieces) : 0;
+  const totalBoxes = parseFloat(quantite) || 0;
+  const ppb = parseInt(pieces) || 1;
+  const totalPieces = Math.round(totalBoxes * ppb);
+  const m2PerPiece = ppb > 0 ? m2PerBox / ppb : 0;
   const totalM2 = totalPieces * m2PerPiece;
   const totalValue = totalM2 * (parseFloat(prix) || 0);
 
@@ -50,7 +51,7 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       return;
     }
 
-    if (!quantite || parseInt(quantite) < 0) {
+    if (!quantite || parseFloat(quantite) < 0) {
       setError("Le nombre de caises est obligatoire.");
       setSaving(false);
       return;
@@ -146,14 +147,25 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Nombre de Caises *</label>
-              <input className="input-field" type="number" min="0" value={quantite} onChange={(e) => setQuantite(e.target.value)} placeholder="10" />
+              <input className="input-field" type="number" min="0" step="0.1" value={quantite} onChange={(e) => setQuantite(e.target.value)} placeholder="10" />
             </div>
           </div>
+
+          {editingRef && editingRef.pieces_par_boite > 0 && (
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <p className="text-blue-300 text-sm">
+                Stock actuel : <span className="font-bold">{editingRef.quantite}</span> pièces
+                (<span className="font-bold">{(editingRef.quantite / editingRef.pieces_par_boite).toFixed(1)}</span> caises)
+                {" | "}{editingRef.total_m2.toFixed(2)} m²
+                {" | "}{editingRef.valeur_stock.toFixed(2)} DH
+              </p>
+            </div>
+          )}
 
           {totalBoxes > 0 && m2PerBox > 0 && parseFloat(prix) > 0 && (
             <div className="p-4 bg-ceramore-gold/10 border border-ceramore-gold/20 rounded-xl space-y-1">
               <p className="text-amber-300 text-sm">
-                Caises : <span className="font-bold">{totalBoxes}</span> | 
+                Caises : <span className="font-bold">{totalBoxes % 1 === 0 ? totalBoxes : totalBoxes.toFixed(1)}</span> | 
                 Pièces : <span className="font-bold">{totalPieces}</span> | 
                 Total m² : <span className="font-bold">{totalM2.toFixed(2)}</span> | 
                 Valeur : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
