@@ -91,11 +91,9 @@ export default function ReferenceTable({ references, onEdit, onDelete, onStockAd
                   {ref.prix_unitaire.toFixed(2)} DH{ref.type === "produit" ? "" : "/m²"}
                 </td>
                 <td className="px-6 py-4 text-slate-300">
-                  {ref.type === "produit" ? "—" : ref.quantite}
+                  {ref.type === "produit" ? "—" : (ref.pieces_par_boite > 0 ? (ref.quantite / ref.pieces_par_boite).toFixed(1) : "—")}
                 </td>
-                <td className="px-6 py-4 text-white font-semibold">
-                  {ref.type === "produit" ? ref.quantite : ref.quantite * (ref.pieces_par_boite || 1)}
-                </td>
+                <td className="px-6 py-4 text-white font-semibold">{ref.quantite}</td>
                 <td className="px-6 py-4 text-slate-300">
                   {ref.type === "produit" ? "—" : ref.total_m2.toFixed(2)}
                 </td>

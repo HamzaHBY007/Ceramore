@@ -88,8 +88,10 @@ export async function POST(request: NextRequest) {
 
   const isProduct = type === "produit";
 
-  const m2_par_boite = isProduct ? 0 : (largeur_cm / 100) * (longueur_cm / 100) * pieces_par_boite;
-  const total_m2 = isProduct ? 0 : quantite * m2_par_boite;
+  const ppb = isProduct ? 0 : (pieces_par_boite || 1);
+  const m2_par_boite = isProduct ? 0 : (largeur_cm / 100) * (longueur_cm / 100) * ppb;
+  const m2_per_piece = ppb > 0 ? m2_par_boite / ppb : 0;
+  const total_m2 = isProduct ? 0 : quantite * m2_per_piece;
   const valeur_stock = isProduct
     ? quantite * prix_unitaire
     : total_m2 * prix_unitaire;
@@ -105,7 +107,7 @@ export async function POST(request: NextRequest) {
       nom || "",
       isProduct ? 0 : largeur_cm,
       isProduct ? 0 : longueur_cm,
-      isProduct ? 0 : (pieces_par_boite || 0),
+      isProduct ? 0 : ppb,
       Math.round(m2_par_boite * 10000) / 10000,
       prix_unitaire,
       quantite,
@@ -142,8 +144,10 @@ export async function PUT(request: NextRequest) {
 
   const isProduct = type === "produit";
 
-  const m2_par_boite = isProduct ? 0 : (largeur_cm / 100) * (longueur_cm / 100) * pieces_par_boite;
-  const total_m2 = isProduct ? 0 : quantite * m2_par_boite;
+  const ppb = isProduct ? 0 : (pieces_par_boite || 1);
+  const m2_par_boite = isProduct ? 0 : (largeur_cm / 100) * (longueur_cm / 100) * ppb;
+  const m2_per_piece = ppb > 0 ? m2_par_boite / ppb : 0;
+  const total_m2 = isProduct ? 0 : quantite * m2_per_piece;
   const valeur_stock = isProduct
     ? quantite * prix_unitaire
     : total_m2 * prix_unitaire;
@@ -157,7 +161,7 @@ export async function PUT(request: NextRequest) {
       nom || "",
       isProduct ? 0 : largeur_cm,
       isProduct ? 0 : longueur_cm,
-      isProduct ? 0 : (pieces_par_boite || 0),
+      isProduct ? 0 : ppb,
       Math.round(m2_par_boite * 10000) / 10000,
       prix_unitaire,
       quantite,

@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
     }
 
     const isProduct = ref.type === "produit";
-    const total_m2 = isProduct ? 0 : newQuantite * ref.m2_par_boite;
+    const ppb = ref.pieces_par_boite || 1;
+    const m2_per_piece = ppb > 0 ? ref.m2_par_boite / ppb : 0;
+    const total_m2 = isProduct ? 0 : newQuantite * m2_per_piece;
     const valeur_stock = isProduct ? newQuantite * ref.prix_unitaire : total_m2 * ref.prix_unitaire;
 
     db.prepare(`UPDATE references_table SET quantite=?, total_m2=?, valeur_stock=?, updated_at=datetime('now') WHERE id=?`).run(

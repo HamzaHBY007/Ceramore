@@ -20,28 +20,24 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
   const [error, setError] = useState("");
 
   const parsedAmount = parseInt(amount) || 0;
+  const ppb = reference.pieces_par_boite || 1;
+  const m2PerPiece = isTile && ppb > 0 ? reference.m2_par_boite / ppb : 0;
 
-  const computedCaises = (() => {
-    if (mode === "caises") return parsedAmount;
-    if (isTile && reference.pieces_par_boite > 0) {
-      return Math.ceil(parsedAmount / reference.pieces_par_boite);
-    }
-    return parsedAmount;
-  })();
+  const piecesToAdjust = mode === "caises" ? parsedAmount * ppb : parsedAmount;
 
   const newQuantite = (() => {
-    if (action === "add") return reference.quantite + computedCaises;
-    return Math.max(0, reference.quantite - computedCaises);
+    if (action === "add") return reference.quantite + piecesToAdjust;
+    return Math.max(0, reference.quantite - piecesToAdjust);
   })();
 
-  const previewTotalM2 = isTile ? newQuantite * reference.m2_par_boite : 0;
+  const previewTotalM2 = isTile ? newQuantite * m2PerPiece : 0;
   const previewTotalPrice = isProduct
     ? newQuantite * reference.prix_unitaire
     : previewTotalM2 * reference.prix_unitaire;
 
-  const deltaM2 = isTile ? computedCaises * reference.m2_par_boite : 0;
+  const deltaM2 = isTile ? piecesToAdjust * m2PerPiece : 0;
   const deltaPrice = isProduct
-    ? computedCaises * reference.prix_unitaire
+    ? piecesToAdjust * reference.prix_unitaire
     : deltaM2 * reference.prix_unitaire;
 
   const handleSubmit = async () => {
@@ -58,7 +54,7 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
       body: JSON.stringify({
         reference_id: reference.id,
         type: action === "add" ? "entree" : "sortie",
-        quantite: isProduct ? parsedAmount : computedCaises,
+        quantite: piecesToAdjust,
         note: `${action === "add" ? "Ajout" : "Retrait"} de ${parsedAmount} ${mode === "caises" ? "caises" : "unités"}`,
       }),
     });
@@ -111,7 +107,7 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
                 onClick={() => setMode("unites")}
                 className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${mode === "unites" ? "bg-ceramore-gold/20 text-ceramore-gold border border-ceramore-gold/40" : "bg-slate-700/50 text-slate-400 border border-slate-600/30 hover:bg-slate-700"}`}
               >
-                Unités
+                Unités (pièces)
               </button>
             </div>
           </div>
@@ -119,7 +115,7 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-300 mb-1.5">
-            {isProduct ? "Nombre d'unités" : mode === "caises" ? "Nombre de caises" : "Nombre d'unités (pièces)"}
+            {isProduct ? "Nombre d'unités" : mode === "caises" ? "Nombre de caises" : "Nombre de pièces"}
           </label>
           <input
             className="input-field"
@@ -132,9 +128,9 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
           />
         </div>
 
-        {isTile && mode === "unites" && parsedAmount > 0 && reference.pieces_par_boite > 0 && (
+        {isTile && mode === "caises" && parsedAmount > 0 && (
           <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-sm">
-            {parsedAmount} unités = {computedCaises} caisse{computedCaises > 1 ? "s" : ""} ({reference.pieces_par_boite} pcs/caisse)
+            {parsedAmount} caisse{parsedAmount > 1 ? "s" : ""} = {piecesToAdjust} pièces ({ppb} pcs/caisse)
           </div>
         )}
 
@@ -142,7 +138,7 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
           <div className="mb-4 space-y-2">
             <div className={`p-3 rounded-xl text-sm ${action === "add" ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-red-500/10 border border-red-500/20"}`}>
               <p className={action === "add" ? "text-emerald-300" : "text-red-300"}>
-                {actionLabel} <span className="font-bold">{isProduct ? parsedAmount : computedCaises}</span> {isProduct ? "unité(s)" : "caisse(s)"} {action === "add" ? "au" : "du"} stock
+                {actionLabel} <span className="font-bold">{piecesToAdjust}</span> pièce{piecesToAdjust > 1 ? "s" : ""} {action === "add" ? "au" : "du"} stock
               </p>
             </div>
 
@@ -168,23 +164,23 @@ export default function StockAdjustModal({ reference, action, onClose, onConfirm
                   </span>
                 </span>
               </div>
-              {!isProduct && (
+              <div className="flex justify-between">
+                <span className="text-slate-400">Pièces en stock</span>
+                <span className="text-white font-medium">
+                  {newQuantite}
+                  <span className={`ml-1 text-xs ${action === "add" ? "text-emerald-400" : "text-red-400"}`}>
+                    ({action === "add" ? "+" : "-"}{piecesToAdjust})
+                  </span>
+                </span>
+              </div>
+              {isTile && (
                 <div className="flex justify-between">
                   <span className="text-slate-400">Caises</span>
                   <span className="text-white font-medium">
-                    {newQuantite}
-                    <span className={`ml-1 text-xs ${action === "add" ? "text-emerald-400" : "text-red-400"}`}>
-                      ({action === "add" ? "+" : "-"}{computedCaises})
-                    </span>
+                    {(newQuantite / ppb).toFixed(1)}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-slate-400">Quantité (pcs)</span>
-                <span className="text-white font-medium">
-                  {isProduct ? newQuantite : newQuantite * (reference.pieces_par_boite || 1)}
-                </span>
-              </div>
             </div>
           </div>
         )}

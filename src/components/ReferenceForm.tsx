@@ -15,7 +15,10 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
   const [longueur, setLongueur] = useState(editingRef?.longueur_cm?.toString() || "");
   const [pieces, setPieces] = useState(editingRef?.pieces_par_boite?.toString() || "");
   const [prix, setPrix] = useState(editingRef?.prix_unitaire?.toString() || "");
-  const [quantite, setQuantite] = useState(editingRef?.quantite?.toString() || "");
+  const editBoxes = editingRef && editingRef.pieces_par_boite > 0
+    ? Math.floor(editingRef.quantite / editingRef.pieces_par_boite).toString()
+    : editingRef?.quantite?.toString() || "";
+  const [quantite, setQuantite] = useState(editBoxes);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -24,8 +27,10 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       ? (parseFloat(largeur) / 100) * (parseFloat(longueur) / 100) * parseInt(pieces)
       : 0;
 
-  const totalQuantite = parseInt(quantite) || 0;
-  const totalM2 = totalQuantite * m2PerBox;
+  const totalBoxes = parseInt(quantite) || 0;
+  const totalPieces = totalBoxes * (parseInt(pieces) || 1);
+  const m2PerPiece = parseInt(pieces) > 0 ? m2PerBox / parseInt(pieces) : 0;
+  const totalM2 = totalPieces * m2PerPiece;
   const totalValue = totalM2 * (parseFloat(prix) || 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,7 +64,7 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       longueur_cm: parseFloat(longueur),
       pieces_par_boite: parseInt(pieces),
       prix_unitaire: parseFloat(prix),
-      quantite: parseInt(quantite),
+      quantite: totalPieces,
       type: "carrelage",
     };
 
@@ -145,10 +150,11 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
             </div>
           </div>
 
-          {totalQuantite > 0 && m2PerBox > 0 && parseFloat(prix) > 0 && (
+          {totalBoxes > 0 && m2PerBox > 0 && parseFloat(prix) > 0 && (
             <div className="p-4 bg-ceramore-gold/10 border border-ceramore-gold/20 rounded-xl space-y-1">
               <p className="text-amber-300 text-sm">
-                Total caises : <span className="font-bold">{totalQuantite}</span> | 
+                Caises : <span className="font-bold">{totalBoxes}</span> | 
+                Pièces : <span className="font-bold">{totalPieces}</span> | 
                 Total m² : <span className="font-bold">{totalM2.toFixed(2)}</span> | 
                 Valeur : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
               </p>
