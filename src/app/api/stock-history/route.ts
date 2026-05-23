@@ -8,10 +8,9 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "100");
 
   let query = `
-    SELECT sh.*, r.code as reference_code, r.nom as reference_nom, c.nom as calibre_nom
+    SELECT sh.*, r.code as reference_code, r.nom as reference_nom
     FROM stock_history sh
     JOIN references_table r ON sh.reference_id = r.id
-    LEFT JOIN calibres c ON sh.calibre_id = c.id
   `;
   const params: (string | number)[] = [];
 
@@ -26,4 +25,3 @@ export async function GET(request: NextRequest) {
   const history = db.prepare(query).all(...params);
   return NextResponse.json(history);
 }
-

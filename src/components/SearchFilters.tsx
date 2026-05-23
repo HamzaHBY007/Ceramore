@@ -1,28 +1,33 @@
 "use client";
 
+import type { FilterOptions } from "@/lib/types";
+
 interface Filters {
   search: string;
-  calibre: string;
+  code: string;
+  nom: string;
+  dimension: string;
   dateFrom: string;
   dateTo: string;
-  lowStock: boolean;
+  type: string;
 }
 
 interface Props {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
+  filterOptions: FilterOptions;
 }
 
-export default function SearchFilters({ filters, onFiltersChange }: Props) {
-  const update = (key: keyof Filters, value: string | boolean) => {
+export default function SearchFilters({ filters, onFiltersChange, filterOptions }: Props) {
+  const update = (key: keyof Filters, value: string) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
   const clearFilters = () => {
-    onFiltersChange({ search: "", calibre: "", dateFrom: "", dateTo: "", lowStock: false });
+    onFiltersChange({ search: "", code: "", nom: "", dimension: "", dateFrom: "", dateTo: "", type: "" });
   };
 
-  const hasFilters = filters.search || filters.calibre || filters.dateFrom || filters.dateTo || filters.lowStock;
+  const hasFilters = filters.search || filters.code || filters.nom || filters.dimension || filters.dateFrom || filters.dateTo || filters.type;
 
   return (
     <div className="glass-card p-6">
@@ -42,7 +47,7 @@ export default function SearchFilters({ filters, onFiltersChange }: Props) {
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1.5">Recherche (code ou nom)</label>
           <input
@@ -53,14 +58,34 @@ export default function SearchFilters({ filters, onFiltersChange }: Props) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-400 mb-1.5">Calibre</label>
-          <input
-            className="input-field"
-            placeholder="Filtrer par calibre..."
-            value={filters.calibre}
-            onChange={(e) => update("calibre", e.target.value)}
-          />
+          <label className="block text-xs font-medium text-slate-400 mb-1.5">Référence</label>
+          <select className="input-field" value={filters.code} onChange={(e) => update("code", e.target.value)}>
+            <option value="">Toutes les références</option>
+            {filterOptions.codes.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1.5">Calibre / Nom</label>
+          <select className="input-field" value={filters.nom} onChange={(e) => update("nom", e.target.value)}>
+            <option value="">Tous</option>
+            {filterOptions.noms.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1.5">Dimensions</label>
+          <select className="input-field" value={filters.dimension} onChange={(e) => update("dimension", e.target.value)}>
+            <option value="">Toutes les dimensions</option>
+            {filterOptions.dimensions.map((d) => (
+              <option key={d} value={d}>{d} cm</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1.5">Date début</label>
           <input
@@ -79,16 +104,13 @@ export default function SearchFilters({ filters, onFiltersChange }: Props) {
             onChange={(e) => update("dateTo", e.target.value)}
           />
         </div>
-        <div className="flex items-end">
-          <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-xl bg-slate-900/40 border border-slate-600/50 w-full hover:border-ceramore-gold/30 transition-all">
-            <input
-              type="checkbox"
-              className="w-4 h-4 rounded border-slate-600 text-ceramore-gold focus:ring-ceramore-gold/50 bg-slate-900"
-              checked={filters.lowStock}
-              onChange={(e) => update("lowStock", e.target.checked)}
-            />
-            <span className="text-sm text-slate-300">Stock bas uniquement</span>
-          </label>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1.5">Type</label>
+          <select className="input-field" value={filters.type} onChange={(e) => update("type", e.target.value)}>
+            <option value="">Tous les types</option>
+            <option value="carrelage">Carrelage</option>
+            <option value="produit">Produit</option>
+          </select>
         </div>
       </div>
     </div>

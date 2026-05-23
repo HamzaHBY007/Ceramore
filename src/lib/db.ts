@@ -26,36 +26,28 @@ function initializeDb(database: Database.Database) {
     CREATE TABLE IF NOT EXISTS references_table (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       code TEXT NOT NULL UNIQUE,
-      nom TEXT NOT NULL,
-      largeur_cm REAL NOT NULL,
-      longueur_cm REAL NOT NULL,
-      pieces_par_boite INTEGER NOT NULL,
-      m2_par_boite REAL NOT NULL,
+      nom TEXT NOT NULL DEFAULT '',
+      largeur_cm REAL NOT NULL DEFAULT 0,
+      longueur_cm REAL NOT NULL DEFAULT 0,
+      pieces_par_boite INTEGER NOT NULL DEFAULT 0,
+      m2_par_boite REAL NOT NULL DEFAULT 0,
       prix_unitaire_m2 REAL NOT NULL DEFAULT 0,
-      seuil_alerte INTEGER NOT NULL DEFAULT 5,
+      quantite_caises INTEGER NOT NULL DEFAULT 0,
+      total_m2 REAL NOT NULL DEFAULT 0,
+      valeur_stock REAL NOT NULL DEFAULT 0,
+      type TEXT NOT NULL DEFAULT 'carrelage' CHECK(type IN ('carrelage', 'produit')),
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS calibres (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      reference_id INTEGER NOT NULL,
-      nom TEXT NOT NULL,
-      quantite_boites INTEGER NOT NULL DEFAULT 0,
-      FOREIGN KEY (reference_id) REFERENCES references_table(id) ON DELETE CASCADE,
-      UNIQUE(reference_id, nom)
     );
 
     CREATE TABLE IF NOT EXISTS stock_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       reference_id INTEGER NOT NULL,
-      calibre_id INTEGER,
       type TEXT NOT NULL CHECK(type IN ('entree', 'sortie')),
-      quantite_boites INTEGER NOT NULL,
+      quantite_caises INTEGER NOT NULL,
       date_entry TEXT NOT NULL DEFAULT (datetime('now')),
       note TEXT,
-      FOREIGN KEY (reference_id) REFERENCES references_table(id) ON DELETE CASCADE,
-      FOREIGN KEY (calibre_id) REFERENCES calibres(id) ON DELETE SET NULL
+      FOREIGN KEY (reference_id) REFERENCES references_table(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS stock_snapshots (
@@ -63,10 +55,24 @@ function initializeDb(database: Database.Database) {
       date TEXT NOT NULL,
       total_m2 REAL NOT NULL,
       total_valeur REAL NOT NULL,
-      total_boites INTEGER NOT NULL,
+      total_caises INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  // Migration: add new columns if missing (for existing DBs)
+  try {
+    database.exec(`ALTER TABLE references_table ADD COLUMN quantite_caises INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* column exists */ }
+  try {
+    database.exec(`ALTER TABLE references_table ADD COLUMN total_m2 REAL NOT NULL DEFAULT 0`);
+  } catch { /* column exists */ }
+  try {
+    database.exec(`ALTER TABLE references_table ADD COLUMN valeur_stock REAL NOT NULL DEFAULT 0`);
+  } catch { /* column exists */ }
+  try {
+    database.exec(`ALTER TABLE references_table ADD COLUMN type TEXT NOT NULL DEFAULT 'carrelage'`);
+  } catch { /* column exists */ }
 }
 
 export default getDb;

@@ -8,33 +8,25 @@ interface Props {
   onClose: () => void;
 }
 
-export default function ReferenceForm({ editingRef, onClose }: Props) {
+export default function ProductForm({ editingRef, onClose }: Props) {
   const [code, setCode] = useState(editingRef?.code || "");
   const [nom, setNom] = useState(editingRef?.nom || "");
-  const [largeur, setLargeur] = useState(editingRef?.largeur_cm?.toString() || "");
-  const [longueur, setLongueur] = useState(editingRef?.longueur_cm?.toString() || "");
-  const [pieces, setPieces] = useState(editingRef?.pieces_par_boite?.toString() || "");
   const [prix, setPrix] = useState(editingRef?.prix_unitaire_m2?.toString() || "");
+  const [pieces, setPieces] = useState(editingRef?.pieces_par_boite?.toString() || "");
   const [caises, setCaises] = useState(editingRef?.quantite_caises?.toString() || "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const m2PerBox =
-    largeur && longueur && pieces
-      ? (parseFloat(largeur) / 100) * (parseFloat(longueur) / 100) * parseInt(pieces)
-      : 0;
-
   const totalCaises = parseInt(caises) || 0;
-  const totalM2 = totalCaises * m2PerBox;
-  const totalValue = totalM2 * (parseFloat(prix) || 0);
+  const totalValue = totalCaises * (parseFloat(prix) || 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSaving(true);
 
-    if (!code || !largeur || !longueur || !pieces) {
-      setError("Veuillez remplir tous les champs obligatoires.");
+    if (!code) {
+      setError("Le code produit est obligatoire.");
       setSaving(false);
       return;
     }
@@ -55,12 +47,12 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       id: editingRef?.id,
       code,
       nom,
-      largeur_cm: parseFloat(largeur),
-      longueur_cm: parseFloat(longueur),
-      pieces_par_boite: parseInt(pieces),
+      largeur_cm: 0,
+      longueur_cm: 0,
+      pieces_par_boite: parseInt(pieces) || 0,
       prix_unitaire_m2: parseFloat(prix),
       quantite_caises: parseInt(caises),
-      type: "carrelage",
+      type: "produit",
     };
 
     const res = await fetch("/api/references", {
@@ -81,10 +73,10 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="glass-card w-full max-w-2xl p-8 slide-in max-h-[90vh] overflow-y-auto">
+      <div className="glass-card w-full max-w-lg p-8 slide-in max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-white">
-            {editingRef ? "Modifier la Référence" : "Nouvelle Référence"}
+            {editingRef ? "Modifier le Produit" : "Ajouter un Produit"}
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,44 +92,25 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Code Référence *</label>
-              <input className="input-field" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex: CRM-001" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Calibre</label>
-              <input className="input-field" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: A, B, C (optionnel)" />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Code Produit *</label>
+            <input className="input-field" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex: PRD-001" />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Largeur (cm) *</label>
-              <input className="input-field" type="number" step="0.1" value={largeur} onChange={(e) => setLargeur(e.target.value)} placeholder="60" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Longueur (cm) *</label>
-              <input className="input-field" type="number" step="0.1" value={longueur} onChange={(e) => setLongueur(e.target.value)} placeholder="60" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Pièces/Caisse *</label>
-              <input className="input-field" type="number" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="4" />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Nom du Produit</label>
+            <input className="input-field" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: Colle carrelage (optionnel)" />
           </div>
 
-          {m2PerBox > 0 && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-              <p className="text-emerald-400 text-sm font-medium">
-                m² par caisse : <span className="text-lg font-bold">{m2PerBox.toFixed(4)}</span> m²
-              </p>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Pièces par Caisse</label>
+            <input className="input-field" type="number" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="Ex: 12" />
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Prix unitaire (DH/m²) *</label>
-              <input className="input-field" type="number" step="0.01" value={prix} onChange={(e) => setPrix(e.target.value)} placeholder="120.00" />
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Prix Unitaire (DH) *</label>
+              <input className="input-field" type="number" step="0.01" value={prix} onChange={(e) => setPrix(e.target.value)} placeholder="50.00" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Nombre de Caises *</label>
@@ -145,12 +118,11 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
             </div>
           </div>
 
-          {totalCaises > 0 && m2PerBox > 0 && parseFloat(prix) > 0 && (
-            <div className="p-4 bg-ceramore-gold/10 border border-ceramore-gold/20 rounded-xl space-y-1">
+          {totalCaises > 0 && parseFloat(prix) > 0 && (
+            <div className="p-4 bg-ceramore-gold/10 border border-ceramore-gold/20 rounded-xl">
               <p className="text-amber-300 text-sm">
                 Total caises : <span className="font-bold">{totalCaises}</span> | 
-                Total m² : <span className="font-bold">{totalM2.toFixed(2)}</span> | 
-                Valeur : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
+                Prix total : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
               </p>
             </div>
           )}

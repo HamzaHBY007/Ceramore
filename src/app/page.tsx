@@ -1,35 +1,37 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { ReferenceWithCalibres, DashboardStats, StockSnapshot } from "@/lib/types";
+import type { ReferenceWithDetails, DashboardStats, StockSnapshot, FilterOptions } from "@/lib/types";
 import StatsCards from "@/components/StatsCards";
 import ReferenceForm from "@/components/ReferenceForm";
+import ProductForm from "@/components/ProductForm";
 import ReferenceTable from "@/components/ReferenceTable";
 import StockCharts from "@/components/StockCharts";
 import SearchFilters from "@/components/SearchFilters";
-import LowStockAlerts from "@/components/LowStockAlerts";
 import ExportButtons from "@/components/ExportButtons";
-import StockModal from "@/components/StockModal";
 
 export default function Dashboard() {
-  const [references, setReferences] = useState<ReferenceWithCalibres[]>([]);
+  const [references, setReferences] = useState<ReferenceWithDetails[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
-    total_references: 0, total_boites: 0, total_m2: 0, total_valeur: 0, low_stock_count: 0,
+    total_references: 0, total_caises: 0, total_m2: 0, total_valeur: 0,
   });
   const [snapshots, setSnapshots] = useState<StockSnapshot[]>([]);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ codes: [], noms: [], dimensions: [] });
   const [showForm, setShowForm] = useState(false);
-  const [editingRef, setEditingRef] = useState<ReferenceWithCalibres | null>(null);
-  const [stockModal, setStockModal] = useState<{ ref: ReferenceWithCalibres; type: "entree" | "sortie" } | null>(null);
-  const [filters, setFilters] = useState({ search: "", calibre: "", dateFrom: "", dateTo: "", lowStock: false });
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [editingRef, setEditingRef] = useState<ReferenceWithDetails | null>(null);
+  const [filters, setFilters] = useState({ search: "", code: "", nom: "", dimension: "", dateFrom: "", dateTo: "", type: "" });
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     const params = new URLSearchParams();
     if (filters.search) params.set("search", filters.search);
-    if (filters.calibre) params.set("calibre", filters.calibre);
+    if (filters.code) params.set("code", filters.code);
+    if (filters.nom) params.set("nom", filters.nom);
+    if (filters.dimension) params.set("dimension", filters.dimension);
     if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
     if (filters.dateTo) params.set("dateTo", filters.dateTo);
-    if (filters.lowStock) params.set("lowStock", "true");
+    if (filters.type) params.set("type", filters.type);
 
     const [refsRes, snapsRes] = await Promise.all([
       fetch(`/api/references?${params}`),
@@ -41,6 +43,7 @@ export default function Dashboard() {
 
     setReferences(refsData.references);
     setStats(refsData.stats);
+    setFilterOptions(refsData.filterOptions);
     setSnapshots(snapsData);
     setLoading(false);
   }, [filters]);
@@ -49,9 +52,13 @@ export default function Dashboard() {
     fetchData();
   }, [fetchData]);
 
-  const handleEdit = (ref: ReferenceWithCalibres) => {
+  const handleEdit = (ref: ReferenceWithDetails) => {
     setEditingRef(ref);
-    setShowForm(true);
+    if (ref.type === "produit") {
+      setShowProductForm(true);
+    } else {
+      setShowForm(true);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -66,6 +73,7 @@ export default function Dashboard() {
 
   const handleFormClose = () => {
     setShowForm(false);
+    setShowProductForm(false);
     setEditingRef(null);
     fetchData();
   };
@@ -89,6 +97,15 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <ExportButtons />
             <button
+              onClick={() => { setEditingRef(null); setShowProductForm(true); }}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Ajouter un Produit
+            </button>
+            <button
               onClick={() => { setEditingRef(null); setShowForm(true); }}
               className="btn-primary flex items-center gap-2"
             >
@@ -102,9 +119,6 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
-        {/* Low Stock Alerts */}
-        <LowStockAlerts references={references} />
-
         {/* Stats */}
         <StatsCards stats={stats} loading={loading} />
 
@@ -112,19 +126,18 @@ export default function Dashboard() {
         <StockCharts snapshots={snapshots} />
 
         {/* Filters */}
-        <SearchFilters filters={filters} onFiltersChange={setFilters} />
+        <SearchFilters filters={filters} onFiltersChange={setFilters} filterOptions={filterOptions} />
 
         {/* Reference Table */}
         <ReferenceTable
           references={references}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onStock={(ref, type) => setStockModal({ ref, type })}
           loading={loading}
         />
       </main>
 
-      {/* Add/Edit Form Modal */}
+      {/* Add/Edit Reference Form Modal */}
       {showForm && (
         <ReferenceForm
           editingRef={editingRef}
@@ -132,12 +145,11 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Stock Movement Modal */}
-      {stockModal && (
-        <StockModal
-          reference={stockModal.ref}
-          type={stockModal.type}
-          onClose={() => { setStockModal(null); fetchData(); }}
+      {/* Add/Edit Product Form Modal */}
+      {showProductForm && (
+        <ProductForm
+          editingRef={editingRef}
+          onClose={handleFormClose}
         />
       )}
     </div>
