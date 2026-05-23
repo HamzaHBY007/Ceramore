@@ -9,24 +9,22 @@ interface Props {
 }
 
 export default function ProductForm({ editingRef, onClose }: Props) {
-  const [code, setCode] = useState(editingRef?.code || "");
   const [nom, setNom] = useState(editingRef?.nom || "");
-  const [prix, setPrix] = useState(editingRef?.prix_unitaire_m2?.toString() || "");
-  const [pieces, setPieces] = useState(editingRef?.pieces_par_boite?.toString() || "");
-  const [caises, setCaises] = useState(editingRef?.quantite_caises?.toString() || "");
+  const [prix, setPrix] = useState(editingRef?.prix_unitaire?.toString() || "");
+  const [quantite, setQuantite] = useState(editingRef?.quantite?.toString() || "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const totalCaises = parseInt(caises) || 0;
-  const totalValue = totalCaises * (parseFloat(prix) || 0);
+  const totalUnits = parseInt(quantite) || 0;
+  const totalValue = totalUnits * (parseFloat(prix) || 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSaving(true);
 
-    if (!code) {
-      setError("Le code produit est obligatoire.");
+    if (!nom.trim()) {
+      setError("Le nom du produit est obligatoire.");
       setSaving(false);
       return;
     }
@@ -37,21 +35,21 @@ export default function ProductForm({ editingRef, onClose }: Props) {
       return;
     }
 
-    if (!caises || parseInt(caises) < 0) {
-      setError("Le nombre de caises est obligatoire.");
+    if (!quantite || parseInt(quantite) < 0) {
+      setError("Le nombre d'unités est obligatoire.");
       setSaving(false);
       return;
     }
 
     const body = {
       id: editingRef?.id,
-      code,
+      code: editingRef?.code || `PRD-${Date.now()}`,
       nom,
       largeur_cm: 0,
       longueur_cm: 0,
-      pieces_par_boite: parseInt(pieces) || 0,
-      prix_unitaire_m2: parseFloat(prix),
-      quantite_caises: parseInt(caises),
+      pieces_par_boite: 0,
+      prix_unitaire: parseFloat(prix),
+      quantite: parseInt(quantite),
       type: "produit",
     };
 
@@ -93,18 +91,8 @@ export default function ProductForm({ editingRef, onClose }: Props) {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Code Produit *</label>
-            <input className="input-field" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex: PRD-001" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Nom du Produit</label>
-            <input className="input-field" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: Colle carrelage (optionnel)" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Pièces par Caisse</label>
-            <input className="input-field" type="number" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="Ex: 12" />
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Nom du Produit *</label>
+            <input className="input-field" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: Colle carrelage" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -113,15 +101,15 @@ export default function ProductForm({ editingRef, onClose }: Props) {
               <input className="input-field" type="number" step="0.01" value={prix} onChange={(e) => setPrix(e.target.value)} placeholder="50.00" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Nombre de Caises *</label>
-              <input className="input-field" type="number" min="0" value={caises} onChange={(e) => setCaises(e.target.value)} placeholder="10" />
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Nombre d&apos;Unités *</label>
+              <input className="input-field" type="number" min="0" value={quantite} onChange={(e) => setQuantite(e.target.value)} placeholder="10" />
             </div>
           </div>
 
-          {totalCaises > 0 && parseFloat(prix) > 0 && (
+          {totalUnits > 0 && parseFloat(prix) > 0 && (
             <div className="p-4 bg-ceramore-gold/10 border border-ceramore-gold/20 rounded-xl">
               <p className="text-amber-300 text-sm">
-                Total caises : <span className="font-bold">{totalCaises}</span> | 
+                Total unités : <span className="font-bold">{totalUnits}</span> | 
                 Prix total : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
               </p>
             </div>

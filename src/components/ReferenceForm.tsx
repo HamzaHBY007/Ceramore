@@ -14,8 +14,8 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
   const [largeur, setLargeur] = useState(editingRef?.largeur_cm?.toString() || "");
   const [longueur, setLongueur] = useState(editingRef?.longueur_cm?.toString() || "");
   const [pieces, setPieces] = useState(editingRef?.pieces_par_boite?.toString() || "");
-  const [prix, setPrix] = useState(editingRef?.prix_unitaire_m2?.toString() || "");
-  const [caises, setCaises] = useState(editingRef?.quantite_caises?.toString() || "");
+  const [prix, setPrix] = useState(editingRef?.prix_unitaire?.toString() || "");
+  const [quantite, setQuantite] = useState(editingRef?.quantite?.toString() || "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -24,8 +24,8 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       ? (parseFloat(largeur) / 100) * (parseFloat(longueur) / 100) * parseInt(pieces)
       : 0;
 
-  const totalCaises = parseInt(caises) || 0;
-  const totalM2 = totalCaises * m2PerBox;
+  const totalQuantite = parseInt(quantite) || 0;
+  const totalM2 = totalQuantite * m2PerBox;
   const totalValue = totalM2 * (parseFloat(prix) || 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +45,7 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       return;
     }
 
-    if (!caises || parseInt(caises) < 0) {
+    if (!quantite || parseInt(quantite) < 0) {
       setError("Le nombre de caises est obligatoire.");
       setSaving(false);
       return;
@@ -58,8 +58,8 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
       largeur_cm: parseFloat(largeur),
       longueur_cm: parseFloat(longueur),
       pieces_par_boite: parseInt(pieces),
-      prix_unitaire_m2: parseFloat(prix),
-      quantite_caises: parseInt(caises),
+      prix_unitaire: parseFloat(prix),
+      quantite: parseInt(quantite),
       type: "carrelage",
     };
 
@@ -141,14 +141,14 @@ export default function ReferenceForm({ editingRef, onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Nombre de Caises *</label>
-              <input className="input-field" type="number" min="0" value={caises} onChange={(e) => setCaises(e.target.value)} placeholder="10" />
+              <input className="input-field" type="number" min="0" value={quantite} onChange={(e) => setQuantite(e.target.value)} placeholder="10" />
             </div>
           </div>
 
-          {totalCaises > 0 && m2PerBox > 0 && parseFloat(prix) > 0 && (
+          {totalQuantite > 0 && m2PerBox > 0 && parseFloat(prix) > 0 && (
             <div className="p-4 bg-ceramore-gold/10 border border-ceramore-gold/20 rounded-xl space-y-1">
               <p className="text-amber-300 text-sm">
-                Total caises : <span className="font-bold">{totalCaises}</span> | 
+                Total caises : <span className="font-bold">{totalQuantite}</span> | 
                 Total m² : <span className="font-bold">{totalM2.toFixed(2)}</span> | 
                 Valeur : <span className="font-bold">{totalValue.toFixed(2)} DH</span>
               </p>

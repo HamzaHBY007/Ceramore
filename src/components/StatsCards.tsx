@@ -21,8 +21,8 @@ export default function StatsCards({ stats, loading }: Props) {
       bgGlow: "bg-blue-500/10",
     },
     {
-      label: "Caises en Stock",
-      value: stats.total_caises.toLocaleString("fr-FR"),
+      label: "Quantité en Stock",
+      value: stats.total_quantite.toLocaleString("fr-FR"),
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

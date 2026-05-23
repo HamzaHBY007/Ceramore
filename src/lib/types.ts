@@ -6,8 +6,8 @@ export interface Reference {
   longueur_cm: number;
   pieces_par_boite: number;
   m2_par_boite: number;
-  prix_unitaire_m2: number;
-  quantite_caises: number;
+  prix_unitaire: number;
+  quantite: number;
   total_m2: number;
   valeur_stock: number;
   type: "carrelage" | "produit";
@@ -23,7 +23,7 @@ export interface StockHistory {
   id: number;
   reference_id: number;
   type: "entree" | "sortie";
-  quantite_caises: number;
+  quantite: number;
   date_entry: string;
   note: string | null;
   reference_code?: string;
@@ -35,12 +35,12 @@ export interface StockSnapshot {
   date: string;
   total_m2: number;
   total_valeur: number;
-  total_caises: number;
+  total_quantite: number;
 }
 
 export interface DashboardStats {
   total_references: number;
-  total_caises: number;
+  total_quantite: number;
   total_m2: number;
   total_valeur: number;
 }

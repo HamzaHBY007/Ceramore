@@ -26,7 +26,7 @@ export default function ExportButtons() {
 
       autoTable(doc, {
         startY: 38,
-        head: [["Code", "Nom", "Type", "Dimensions", "Pcs/Caisse", "m²/Caisse", "Prix Unitaire", "Caises", "Total m²", "Valeur (DH)"]],
+        head: [["Code", "Nom", "Type", "Dimensions", "Pcs/Caisse", "m²/Caisse", "Prix Unitaire", "Quantité", "Total m²", "Valeur (DH)"]],
         body: data.map((r: Record<string, unknown>) => [
           r.code,
           r.nom,
@@ -35,7 +35,7 @@ export default function ExportButtons() {
           r.pieces_par_caisse,
           r.m2_par_caisse,
           r.prix_unitaire,
-          r.caises,
+          r.quantite,
           r.total_m2,
           r.valeur_stock,
         ]),
@@ -69,12 +69,12 @@ export default function ExportButtons() {
 
       const headers = [
         "Code", "Nom", "Type", "Dimensions", "Pcs/Caisse", "m²/Caisse", "Prix Unitaire (DH)",
-        "Caises", "Total m²", "Valeur Stock (DH)", "Date Création"
+        "Quantité", "Total m²", "Valeur Stock (DH)", "Date Création"
       ];
 
       const rows = data.map((r: Record<string, unknown>) => [
         r.code, r.nom, r.type, r.dimensions, r.pieces_par_caisse, r.m2_par_caisse,
-        r.prix_unitaire, r.caises, r.total_m2, r.valeur_stock, r.date_creation,
+        r.prix_unitaire, r.quantite, r.total_m2, r.valeur_stock, r.date_creation,
       ]);
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);

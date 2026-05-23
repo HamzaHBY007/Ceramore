@@ -13,7 +13,7 @@ import ExportButtons from "@/components/ExportButtons";
 export default function Dashboard() {
   const [references, setReferences] = useState<ReferenceWithDetails[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
-    total_references: 0, total_caises: 0, total_m2: 0, total_valeur: 0,
+    total_references: 0, total_quantite: 0, total_m2: 0, total_valeur: 0,
   });
   const [snapshots, setSnapshots] = useState<StockSnapshot[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ codes: [], noms: [], dimensions: [] });

@@ -22,17 +22,40 @@ function getDb(): Database.Database {
 }
 
 function initializeDb(database: Database.Database) {
+  // Check if old schema exists and migrate
+  const tableInfo = database.prepare(`PRAGMA table_info(stock_history)`).all() as { name: string }[];
+  const hasOldColumn = tableInfo.some((col) => col.name === "quantite_boites");
+
+  if (hasOldColumn) {
+    database.exec(`DROP TABLE IF EXISTS stock_history`);
+    database.exec(`DROP TABLE IF EXISTS stock_snapshots`);
+    database.exec(`DROP TABLE IF EXISTS calibres`);
+    database.exec(`DROP TABLE IF EXISTS references_table`);
+  }
+
+  // Also check for missing columns on references_table
+  const refInfo = database.prepare(`PRAGMA table_info(references_table)`).all() as { name: string }[];
+  if (refInfo.length > 0) {
+    const hasType = refInfo.some((col) => col.name === "type");
+    if (!hasType) {
+      database.exec(`DROP TABLE IF EXISTS stock_history`);
+      database.exec(`DROP TABLE IF EXISTS stock_snapshots`);
+      database.exec(`DROP TABLE IF EXISTS calibres`);
+      database.exec(`DROP TABLE IF EXISTS references_table`);
+    }
+  }
+
   database.exec(`
     CREATE TABLE IF NOT EXISTS references_table (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
+      code TEXT NOT NULL DEFAULT '',
       nom TEXT NOT NULL DEFAULT '',
       largeur_cm REAL NOT NULL DEFAULT 0,
       longueur_cm REAL NOT NULL DEFAULT 0,
       pieces_par_boite INTEGER NOT NULL DEFAULT 0,
       m2_par_boite REAL NOT NULL DEFAULT 0,
-      prix_unitaire_m2 REAL NOT NULL DEFAULT 0,
-      quantite_caises INTEGER NOT NULL DEFAULT 0,
+      prix_unitaire REAL NOT NULL DEFAULT 0,
+      quantite INTEGER NOT NULL DEFAULT 0,
       total_m2 REAL NOT NULL DEFAULT 0,
       valeur_stock REAL NOT NULL DEFAULT 0,
       type TEXT NOT NULL DEFAULT 'carrelage' CHECK(type IN ('carrelage', 'produit')),
@@ -44,7 +67,7 @@ function initializeDb(database: Database.Database) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       reference_id INTEGER NOT NULL,
       type TEXT NOT NULL CHECK(type IN ('entree', 'sortie')),
-      quantite_caises INTEGER NOT NULL,
+      quantite INTEGER NOT NULL,
       date_entry TEXT NOT NULL DEFAULT (datetime('now')),
       note TEXT,
       FOREIGN KEY (reference_id) REFERENCES references_table(id) ON DELETE CASCADE
@@ -55,24 +78,10 @@ function initializeDb(database: Database.Database) {
       date TEXT NOT NULL,
       total_m2 REAL NOT NULL,
       total_valeur REAL NOT NULL,
-      total_caises INTEGER NOT NULL,
+      total_quantite INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
-
-  // Migration: add new columns if missing (for existing DBs)
-  try {
-    database.exec(`ALTER TABLE references_table ADD COLUMN quantite_caises INTEGER NOT NULL DEFAULT 0`);
-  } catch { /* column exists */ }
-  try {
-    database.exec(`ALTER TABLE references_table ADD COLUMN total_m2 REAL NOT NULL DEFAULT 0`);
-  } catch { /* column exists */ }
-  try {
-    database.exec(`ALTER TABLE references_table ADD COLUMN valeur_stock REAL NOT NULL DEFAULT 0`);
-  } catch { /* column exists */ }
-  try {
-    database.exec(`ALTER TABLE references_table ADD COLUMN type TEXT NOT NULL DEFAULT 'carrelage'`);
-  } catch { /* column exists */ }
 }
 
 export default getDb;
